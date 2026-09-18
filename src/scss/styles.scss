@@ -1,0 +1,23 @@
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+div {
+  font-family: 'DynaPuff', system-ui;
+  font-weight: 300;
+}
+
+.dynapuff-regular {
+  font-family: 'DynaPuff', system-ui;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+  font-variation-settings: 'wdth' 100;
+}
+
+@font-face {
+  font-family: 'undertale';
+  src: url('/8bitOperatorPlus-Bold.woff') format('woff');
+}
