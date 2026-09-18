@@ -58,6 +58,7 @@ onMounted(() => {
   display: flex;
   overflow: hidden;
   border-radius: 8px;
+  background-color: rgba(black, .8);
 
   .border {
     width: 100%;

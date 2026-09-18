@@ -46,6 +46,8 @@ type ArchiStoreSginal = {
 }
 
 type ArchiStoreState = {
+  w: number
+  h: number
   status: AppStatus
   exitMessage: string
   port: number
@@ -83,6 +85,8 @@ export type Progress = {
 
 export const useArchiStore = defineStore('archi', {
   state: (): ArchiStoreState => ({
+    w: 0,
+    h: 0,
     status: AppStatus.PENDING,
     exitMessage: '',
     trackerId: '',

@@ -1,5 +1,5 @@
 <template>
-  <main :style='mainStyles' class='tracker-view'>
+  <main class='tracker-view' ref="mainElement">
     <div class='loading' v-if='store.status === AppStatus.PENDING'>
       <VueSpinnerGrid size='48' color='#2f6b83' />
     </div>
@@ -7,11 +7,11 @@
       {{ store.exitMessage }}
     </div>
     <div class='components' v-else>
-      <div class='logger-list' @click="addDebugMessage">
+      <div class='logger-list' @click="addDebugMessage" v-if="type === 'log'">
         <MessageList />
         <!-- <TrackerLogItem v-for='(entry, index) in messageQueue' :key='index' :item='entry' /> -->
       </div>
-      <div class='progress-bars'>
+      <div class='progress-bars' v-if="type === 'progress'">
         <TrackerProgress slotName="AnnoyingEdu" v-if='store.ownLocationProgress' :label='store.game'
           :total='store.ownLocationProgress.total' :current='store.ownLocationProgress.unlocked' />
         <Carousel v-bind="carouselConfig">
@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang='ts'>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { Client } from 'archipelago.js';
 import { useRoute } from 'vue-router';
 import { AppStatus, useArchiStore } from '@/store/archi';
@@ -43,20 +43,14 @@ const carouselConfig: Partial<CarouselConfig> = {
   autoplay: 10000,
 }
 
-// const log = ref<string[]>([]);
+const mainElement = ref<HTMLElement>();
 const store = useArchiStore();
-const w = ref(1920);
-const h = ref(1080);
+const type = ref<'progress' | 'log'>('progress');
 const host = ref('');
 const slotName = ref('');
 const room = ref('');
 const client = new Client();
 const route = useRoute();
-
-const mainStyles = computed(() => ({
-  width: `${w.value}px`,
-  height: `${h.value}px`,
-}));
 
 onUnmounted(() => {
   client.socket.disconnect()
@@ -110,11 +104,13 @@ const addDebugMessage = () => {
 }
 
 onMounted(async () => {
-  w.value = typeof route.query.w === 'string' ? parseInt(route.query.w) : 1920;
-  h.value = typeof route.query.h === 'string' ? parseInt(route.query.h) : 1080;
+  type.value = typeof route.query.type === 'string' ? route.query.type as 'progress' | 'log' : 'progress';
   host.value = typeof route.query.host === 'string' ? route.query.host : 'archipelago.gg';
   slotName.value = typeof route.query.slot === 'string' ? route.query.slot : '';
   room.value = typeof route.query.room === 'string' ? route.query.room : '';
+
+  store.w = mainElement.value?.clientWidth ?? 1080;
+  store.h = mainElement.value?.clientHeight ?? 1920;
 
   if (!slotName.value || !room.value) {
     store.status = AppStatus.ERROR;
@@ -150,6 +146,8 @@ onMounted(async () => {
 
 <style lang='scss'>
 .tracker-view {
+  width: 100%;
+  height: 100%;
   position: relative;
   overflow: hidden;
   background-size: contain;
@@ -157,9 +155,9 @@ onMounted(async () => {
   .components {
     .progress-bars {
       position: absolute;
-      left: 68px;
-      top: 140px;
-      width: 384px;
+      left: 0;
+      top: 0;
+      width: 100%;
 
       >* {
         margin-bottom: 12px;
@@ -196,11 +194,11 @@ onMounted(async () => {
   }
 
   .logger-list {
-    width: 300px;
+    width: 100%;
     height: 100%;
     position: absolute;
-    right: 0;
-    bottom: 0;
+    left: 0;
+    top: 0;
   }
 }
 </style>

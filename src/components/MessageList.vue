@@ -62,8 +62,10 @@ class LogItem {
       const delta = (this.targetY - this.y) / 1.5;
       this.y = this.y + delta;
       this.node.style.transform = `translateY(${(-this.height - this.y).toString()}px)`;
+      // this.node.childNodes[0].childNodes[0].textContent = `${store.h} ${(this.y + this.height).toFixed(2)}`;
 
-      if ((this.y) > window.outerHeight) {
+      if ((this.y + this.height) > store.h) {
+        console.log((this.y + this.height), store.h);
         this.kill();
       }
     }, 60)
@@ -71,7 +73,6 @@ class LogItem {
 
   public kill(): void {
     clearInterval(this.interval);
-
     this.handleRemove(this);
   }
 
@@ -104,7 +105,6 @@ class LogItem {
 }
 
 onMounted(() => {
-  console.log('mounted');
   store.signal.on('message', handleNewMessage);
 });
 
@@ -116,7 +116,6 @@ function handleNewMessage(message: JSONMessagePart[]) {
   const newItem = new LogItem(message, handleRemoved, logItems.value[logItems.value.length - 1]);
   messageList.value?.append(newItem.node);
   logItems.value.push(newItem);
-  // queue.value.push({ data: message, id: md5(message.join('') + Date.now()) });
 }
 
 function handleRemoved(logItem: LogItem): void {
@@ -140,7 +139,6 @@ function handleRemoved(logItem: LogItem): void {
   .tracker-log-item {
     width: 100%;
     transition: all 0.3s ease-out;
-    overflow: hidden;
     box-sizing: border-box;
 
     >div {
@@ -149,6 +147,7 @@ function handleRemoved(logItem: LogItem): void {
       font-size: 18px;
       line-height: 130%;
       padding: 12px;
+      box-shadow: 0px 2px 5px rgba(black, .5);
 
       .names {
         font-size: 14px;
