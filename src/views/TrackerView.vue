@@ -12,7 +12,7 @@
         <!-- <TrackerLogItem v-for='(entry, index) in messageQueue' :key='index' :item='entry' /> -->
       </div>
       <div class='progress-bars' v-if="type === 'progress'">
-        <TrackerProgress slotName="AnnoyingEdu" v-if='store.ownLocationProgress' :label='store.game'
+        <TrackerProgress :slotName="store.slot" v-if='store.ownLocationProgress' :label='store.game'
           :total='store.ownLocationProgress.total' :current='store.ownLocationProgress.unlocked' />
         <Carousel v-bind="carouselConfig">
           <Slide v-for="(p, i) in store.allOtherLocationProgress" :key="i">
@@ -51,6 +51,7 @@ const slotName = ref('');
 const room = ref('');
 const client = new Client();
 const route = useRoute();
+const hideMessages = ref(false);
 
 onUnmounted(() => {
   client.socket.disconnect()
@@ -108,6 +109,7 @@ onMounted(async () => {
   host.value = typeof route.query.host === 'string' ? route.query.host : 'archipelago.gg';
   slotName.value = typeof route.query.slot === 'string' ? route.query.slot : '';
   room.value = typeof route.query.room === 'string' ? route.query.room : '';
+  hideMessages.value = typeof route.query.hideMessages === 'string' ? route.query.hideMessages === 'true' : false;
 
   store.w = mainElement.value?.clientWidth ?? 1080;
   store.h = mainElement.value?.clientHeight ?? 1920;
@@ -123,7 +125,7 @@ onMounted(async () => {
   const trackerResponse = await store.fetchTracker();
 
   client.socket.on('dataPackage', store.handleDataPackage);
-  client.socket.on('printJSON', store.handlePrintJSON);
+  if (!hideMessages.value) client.socket.on('printJSON', store.handlePrintJSON);
 
   client.login(`${host.value}:${store.port}`, slotName.value)
     .then(() => {
