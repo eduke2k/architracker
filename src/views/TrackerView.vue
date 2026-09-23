@@ -3,8 +3,9 @@
     <div class='loading' v-if='store.status === AppStatus.PENDING'>
       <VueSpinnerGrid size='48' color='#2f6b83' />
     </div>
-    <div class='error' v-else-if='store.status === AppStatus.ERROR'>
-      {{ store.exitMessage }}
+    <div class='error d-flex flex-column' v-else-if='store.status === AppStatus.ERROR'>
+      <v-icon class="mb-2">mdi-alert-circle-outline</v-icon>
+      <div>{{ store.exitMessage }}</div>
     </div>
     <div class='components' v-else>
       <div class='logger-list' @click="addDebugMessage" v-if="type === 'log'">
@@ -51,7 +52,6 @@ const slotName = ref('');
 const room = ref('');
 const client = new Client();
 const route = useRoute();
-const hideMessages = ref(false);
 
 onUnmounted(() => {
   client.socket.disconnect()
@@ -62,7 +62,7 @@ const addDebugMessage = () => {
     'cmd': 'PrintJSON',
     'data': [
       {
-        'text': '1',
+        'text': ['1', '2'][Math.floor(Math.random() * 2)],
         'type': 'player_id'
       },
       {
@@ -71,7 +71,7 @@ const addDebugMessage = () => {
       {
         'text': '6242624031',
         'player': 6,
-        'flags': 1,
+        'flags': [0, 1, 2, 4][Math.floor(Math.random() * 4)],
         'type': 'item_id'
       },
       {
@@ -109,10 +109,10 @@ onMounted(async () => {
   host.value = typeof route.query.host === 'string' ? route.query.host : 'archipelago.gg';
   slotName.value = typeof route.query.slot === 'string' ? route.query.slot : '';
   room.value = typeof route.query.room === 'string' ? route.query.room : '';
-  hideMessages.value = typeof route.query.hideMessages === 'string' ? route.query.hideMessages === 'true' : false;
 
   store.w = mainElement.value?.clientWidth ?? 1080;
   store.h = mainElement.value?.clientHeight ?? 1920;
+  store.messageType = (typeof route.query.messageType === 'string' ? route.query.messageType : 'checks') as typeof store.messageType;
 
   if (!slotName.value || !room.value) {
     store.status = AppStatus.ERROR;
@@ -125,7 +125,7 @@ onMounted(async () => {
   const trackerResponse = await store.fetchTracker();
 
   client.socket.on('dataPackage', store.handleDataPackage);
-  if (!hideMessages.value) client.socket.on('printJSON', store.handlePrintJSON);
+  client.socket.on('printJSON', store.handlePrintJSON);
 
   client.login(`${host.value}:${store.port}`, slotName.value)
     .then(() => {
@@ -141,7 +141,10 @@ onMounted(async () => {
       store.initProgress(staticTrackerResponse, trackerResponse);
       store.status = AppStatus.READY;
     })
-    .catch(console.error);
+    .catch((e) => {
+      store.status = AppStatus.ERROR;
+      store.exitMessage = e.message;
+    });
 });
 
 </script>

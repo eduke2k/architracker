@@ -41,6 +41,14 @@ export enum AppStatus {
   ERROR,
 }
 
+export type ParsedMessageParts = {
+  message?: string
+  names?: string[]
+  itemName?: string
+  locationName?: string
+  itemFlags?: number
+}
+
 type ArchiStoreSginal = {
   message: JSONMessagePart[]
 }
@@ -48,6 +56,7 @@ type ArchiStoreSginal = {
 type ArchiStoreState = {
   w: number
   h: number
+  messageType: 'all' | 'checks' | 'affected'
   status: AppStatus
   exitMessage: string
   port: number
@@ -87,6 +96,7 @@ export const useArchiStore = defineStore('archi', {
   state: (): ArchiStoreState => ({
     w: 0,
     h: 0,
+    messageType: 'checks',
     status: AppStatus.PENDING,
     exitMessage: '',
     trackerId: '',
@@ -237,6 +247,47 @@ export const useArchiStore = defineStore('archi', {
       this.printJSON.push(packet.data)
       this.signal.emit('message', packet.data)
     },
+    parseMessageParts(parts: JSONMessagePart[]): ParsedMessageParts {
+      const messageParts: string[] = []
+      const names: string[] = []
+      let itemName: string | undefined
+      let locationName: string | undefined
+      let itemFlags: number | undefined
+
+      parts.forEach((p) => {
+        switch (p.type) {
+          case undefined:
+            messageParts.push(p.text)
+            break
+          case 'player_id':
+            names.push(this.slots[parseInt(p.text)]?.name ?? '???')
+            break
+          case 'item_id':
+            itemName =
+              findKeyByValue(
+                this.games[this.slots[p.player].game].item_name_to_id,
+                parseInt(p.text),
+              ) ?? '???'
+            itemFlags = p.flags
+            break
+          case 'location_id':
+            locationName =
+              findKeyByValue(
+                this.games[this.slots[p.player].game].location_name_to_id,
+                parseInt(p.text),
+              ) ?? '???'
+            break
+        }
+      })
+
+      return {
+        message: messageParts.length === 1 ? messageParts.join(' ') : undefined,
+        names,
+        itemName,
+        locationName,
+        itemFlags,
+      }
+    },
     messagePartsToMessage(parts: JSONMessagePart[]): string {
       const strings: string[] = []
 
@@ -273,7 +324,12 @@ export const useArchiStore = defineStore('archi', {
         return strings.join('')
       }
 
-      return `<div class="names"><span>${names[0]}</span><span class="arrow"></span><span>${names[1]}</span></div><div class="item-name">${itemName}</div>`
+      return `<div class="names">
+        <span>${names[0]}</span>
+        <span class="arrow"></span>
+        <span>${names[1] ?? names[0]}</span>
+        </div>
+        <div class="item-name">${itemName}</div>`
     },
   },
 })
